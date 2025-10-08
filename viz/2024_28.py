@@ -32,7 +32,7 @@ def main():
 
     # 59 unique State/Province
 
-    states = df["State/Province"].unique().sort()
+    states = df["State/Province"].unique().sort().to_numpy().tolist() + ["Overall"]
     num_cols = 10
     fig = make_subplots(
         rows=math.ceil(len(states) / num_cols),
@@ -51,7 +51,7 @@ def main():
         index="State/Province", on="Category", values="Sales", aggregate_function="sum"
     ).fill_null(0)
 
-    # the largest in the data is -52% + 49%
+    # the the data is in [-52, 49]
     pct_clamp = 50
 
     for i, state in enumerate(states):
@@ -74,9 +74,16 @@ def main():
             )
             .sort("Category")
         )
-        state_df = state_profit.join(state_sales, on="Category").with_columns(
-            (100 * pl.col("Profit") / pl.col("Sales")).fill_nan(0).round(0).alias("Profit Pct")
-        ).sort("Category", descending=True)
+        state_df = (
+            state_profit.join(state_sales, on="Category")
+            .with_columns(
+                (100 * pl.col("Profit") / pl.col("Sales"))
+                .fill_nan(0)
+                .round(0)
+                .alias("Profit Pct")
+            )
+            .sort("Category", descending=True)
+        )
 
         bar_colors = []
         for profit_pct in state_df["Profit Pct"]:
@@ -100,16 +107,47 @@ def main():
             col=c,
         )
 
+    # add an "Overall" plot to fill out the full 60
+    # so that it shows the x axis ticks on the last column
+    r, c = subplot_idx(59, 10)
+    overall_df = df.select(["Category", "Profit", "Sales"]).group_by("Category").sum()
+    overall_df = overall_df.with_columns(
+        (100 * pl.col("Profit") / pl.col("Sales"))
+        .fill_nan(0)
+        .round(0)
+        .alias("Profit Pct")
+    ).sort("Category", descending=True)
+
+    bar_colors = []
+    for profit_pct in overall_df["Profit Pct"]:
+        clamped = min(pct_clamp, profit_pct)
+        clamped = max(-pct_clamp, clamped)
+
+        scaled = (clamped + pct_clamp) / (2 * pct_clamp)
+
+        color_sample = sample_colorscale("Picnic_r", (scaled,))[0]
+        bar_colors.append(color_sample)
+
+    fig.add_trace(
+        go.Bar(
+            x=overall_df["Profit Pct"],
+            y=overall_df["Category"],
+            orientation="h",
+            hovertemplate="%{y}: %{x}%<extra></extra>",
+            marker_color=bar_colors,
+        ),
+        row=r,
+        col=c,
+    )
+
     fig.update_layout(
-        template='plotly_dark',
+        template="plotly_dark",
         showlegend=False,
         title_text="Profit as a percentage of sales in each state/province",
     )
     fig.update_xaxes(range=[-pct_clamp, pct_clamp])
     fig.show()
 
-    # TODO maybe add an "Overall" plot to fill out the full 60
-    # so that it shows the x axis ticks on the last column
 
 if __name__ == "__main__":
     main()
