@@ -148,6 +148,10 @@ def main():
     fig.update_xaxes(range=[-pct_clamp, pct_clamp])
     fig.show()
 
+    #fig.write_html("figure_friday_2024_28.html", include_plotlyjs="cdn")
+
+
+
 
 if __name__ == "__main__":
     main()
