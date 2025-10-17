@@ -16,6 +16,18 @@ def cast_to_int(df: pl.DataFrame, colname: str):
 
 
 def main():
+    # testing NA fill behavior
+    # seems to do what I want
+    # x_data = list(range(10))
+    # y_data = [1,2,3,4,5,None, None, None,9, 10]
+    # test_data = {'x': x_data, 'y': y_data}
+    # df = pl.DataFrame(test_data)
+
+    # fig = go.Figure()
+    # fig.add_trace(go.Scatter(x=df['x'], y=df['y']))
+    # fig.show()
+    # breakpoint()
+
     p = get_week_path(2024, 29)
     standings = pl.read_csv(os.path.join(p, "ewf_standings.csv"))
     print(standings.schema)
@@ -139,61 +151,61 @@ def main():
         )
     )
 
-
-    # TODO:
-    # Sheffild Ladies turns into Sheffield United Women
-    # but my algorithm isn't grouping them
-    # do they have different team_ids?
-    # it looks like the Glicko2 changes
-    # so I think they have different team_ids
-    # are they different teams?
-    # I'll have to dig into wikipedia I guess
-    # they're two different teams
-    # https://en.wikipedia.org/wiki/Sheffield_F.C._Women
-    # https://en.wikipedia.org/wiki/Sheffield_United_W.F.C.
-
-
-    # trying to get them from the website is a bit of a mess
+    # trying to get them from their website is a bit of a mess
     # switching to this
     # https://teamcolorcodes.com/england-national-football-team-color-codes/
     team_color_lkp = {
-      'Reading Women': '#004494',
-      'Tottenham Hotspur Women': '#132257',
-      'Manchester United Women': '#da291c',
-      'Doncaster Rovers Belles': '#ffd242', # not on the teamcolorcodes website
-      'Sunderland Women': '#dc0714', # not on the teamcolorcodes website
-      'Yeovil Town Ladies': '#00892f', # not on the teamcolorcodes website
-      'Everton Women': '#003399',
-      'Manchester City Women': '#6cabdd',
-      'Bristol City Women': '#e11f26', # not on the teamcolorcodes website
-      'Arsenal Women': '#ef0107',
-      'West Ham United Women': '#7A263A',
-      'Brighton and Hove Albion Women': '#0057b8',
-      'Birmingham City Women': '#183a90', # not on the teamcolorcodes website
-      "Notts County Ladies": '#a3915f', # not on the teamcolorcodes website
-      'Chelsea Women': '#034694',
-      'Aston Villa Women': '#95bfe5',
-      'Leicester City Women': '#003090',
-      'Liverpool Women': '#C8102e',
-      'Blackburn Rovers Women': '#004D9C', # not on the teamcolorcodes website
-      'Coventry United Women': '#004D9C', # not on the teamcolorcodes website
-      'Sheffield Ladies': '#c61f41', # not on the teamcolorcodes website, could also be black #000 since there are so many reds already
-      'London Bees': '#ff7300', # not on the teamcolorcodes website
-      'Watford Women': '#fbee23',
-      'Charlton Athletic Women': '#bf1829', # not on the teamcolorcodes website, the logo is a gradient
-      'Oxford United Women': '#fff200', # not on the teamcolorcodes website
-      'Southampton Women': '#d71920',
-      'Durham Women': '#3858e9',  # not on the teamcolorcodes website
-      'Sheffield United Women': '#ee2737',
-      'Lewes Women': '#c6183d', # not on the teamcolorcodes website, could also be black #000 or maybe yellow
-      'London City Lionesses': '#00abc7', # not on the teamcolorcodes website
-      'Crystal Palace Women': '#1b458f'
+        "Reading Women": "#004494",
+        "Tottenham Hotspur Women": "#132257",
+        "Manchester United Women": "#da291c",
+        "Doncaster Rovers Belles": "#ffd242",  # not on the teamcolorcodes website
+        "Sunderland Women": "#dc0714",  # not on the teamcolorcodes website
+        "Yeovil Town Ladies": "#00892f",  # not on the teamcolorcodes website
+        "Everton Women": "#003399",
+        "Manchester City Women": "#6cabdd",
+        "Bristol City Women": "#e11f26",  # not on the teamcolorcodes website
+        "Arsenal Women": "#ef0107",
+        "West Ham United Women": "#7A263A",
+        "Brighton and Hove Albion Women": "#0057b8",
+        "Birmingham City Women": "#183a90",  # not on the teamcolorcodes website
+        "Notts County Ladies": "#a3915f",  # not on the teamcolorcodes website
+        "Chelsea Women": "#034694",
+        "Aston Villa Women": "#95bfe5",
+        "Leicester City Women": "#003090",
+        "Liverpool Women": "#C8102e",
+        "Blackburn Rovers Women": "#004D9C",  # not on the teamcolorcodes website
+        "Coventry United Women": "#004D9C",  # not on the teamcolorcodes website
+        "Sheffield Ladies": "#c61f41",  # not on the teamcolorcodes website, could also be black #000 since there are so many reds already
+        "London Bees": "#ff7300",  # not on the teamcolorcodes website
+        "Watford Women": "#fbee23",
+        "Charlton Athletic Women": "#bf1829",  # not on the teamcolorcodes website, the logo is a gradient
+        "Oxford United Women": "#fff200",  # not on the teamcolorcodes website
+        "Southampton Women": "#d71920",
+        "Durham Women": "#3858e9",  # not on the teamcolorcodes website
+        "Sheffield United Women": "#ee2737",
+        "Lewes Women": "#c6183d",  # not on the teamcolorcodes website, could also be black #000 or maybe yellow
+        "London City Lionesses": "#00abc7",  # not on the teamcolorcodes website
+        "Crystal Palace Women": "#1b458f",
     }
 
+    rating_fig = make_subplots(
+        rows=2,
+        cols=1,
+        vertical_spacing=0.02,
+        shared_yaxes=True,
+        shared_xaxes=True,
+        subplot_titles=[
+            "Women's Super League (Tier 1)",
+            "Women's Super League 2 (Tier 2)",
+        ],
+    )
 
-
-    rating_fig = make_subplots(rows=2, cols=1, shared_xaxes=True, subplot_titles=["Women's Super League (Tier 1)", "Women's Super League 2 (Tier 2)"])
-
+    # TODO:
+    # * fix hover text to show the club name better
+    # * get rid of horizontal lines where data is missing
+    #   can I do that by just filling with NA?
+    #   tested and it seems like filling with NA will work
+    #   not sure how to actually do that fill yet though
     for tier in [1, 2]:
         players = {}
         for player_id in appearances.filter(pl.col("tier") == tier)["team_id"].unique():
@@ -237,22 +249,36 @@ def main():
                 f"Player {player_id}: Rating: {player.rating:.2f} RD: {player.rd:.2f}"
             )
 
-            team_name = glicko_plot_df.filter(pl.col("team_id") == player_id)['team_name'].unique()[0]
+            team_name = glicko_plot_df.filter(pl.col("team_id") == player_id)[
+                "team_name"
+            ].unique()[0]
 
             rating_fig.add_trace(
                 go.Scatter(
                     x=glicko_plot_df.filter(pl.col("team_id") == player_id)["date"],
                     y=glicko_plot_df.filter(pl.col("team_id") == player_id)["rating"],
-                    name=f'{team_name}',
+                    name=f"{team_name}",
                     legendgroup=team_name,
                     marker_color=team_color_lkp[team_name],
-                    showlegend=(tier == 1) or player_id not in appearances.filter(pl.col('tier') == 1)['team_id'],
+                    showlegend=(tier == 1)
+                    or player_id
+                    not in appearances.filter(pl.col("tier") == 1)["team_id"],
                 ),
                 row=tier,
                 col=1,
             )
 
-        # rating_fig = px.line(glicko_plot_df, x='date', y='rating', color='team_name', title=f'Tier {tier} Glicko2')
+    # default is margin=dict(l=80, r=80, t=100, b=80)
+    rating_fig.update_layout(
+        margin=dict(l=80, r=80, t=40, b=40),
+    )
+    for r in [1, 2]:
+        rating_fig.update_yaxes(
+            range=[1000, 2000],
+            title_text="Glicko2",
+            row=r,
+            col=1,
+        )
     rating_fig.show()
     breakpoint()
 
