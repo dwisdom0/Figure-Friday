@@ -193,6 +193,7 @@ def main():
     rating_fig = make_subplots(
         rows=2,
         cols=1,
+        row_heights=[0.75, 0.25],
         vertical_spacing=0.02,
         shared_yaxes=True,
         shared_xaxes=True,
