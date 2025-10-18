@@ -244,7 +244,9 @@ def main():
         glicko_plot_df = pl.from_records(glicko_plot_data)
 
         print(f"\nTier {tier}")
-        for player_id, player in players.items():
+        for team_name in appearances.filter(pl.col('team_id').is_in(players.keys()))['team_name'].unique().sort().to_numpy().tolist():
+            player_id = appearances.filter(pl.col('team_name') == team_name)['team_id'].unique()[0]
+            player = players[player_id]
             print(
                 f"Player {player_id}: Rating: {player.rating:.2f} RD: {player.rd:.2f}"
             )
@@ -259,10 +261,11 @@ def main():
                     y=glicko_plot_df.filter(pl.col("team_id") == player_id)["rating"],
                     name=f"{team_name}",
                     legendgroup=team_name,
+                    legendgrouptitle_text=team_name,
                     marker_color=team_color_lkp[team_name],
-                    showlegend=(tier == 1)
-                    or player_id
-                    not in appearances.filter(pl.col("tier") == 1)["team_id"],
+                    hovertemplate=f'%{{y:.0f}} {team_name} <extra></extra>',
+                    #showlegend=False,
+                    showlegend=(tier == 1) or (player_id not in appearances.filter(pl.col("tier") == 1)["team_id"]),
                 ),
                 row=tier,
                 col=1,
