@@ -188,7 +188,12 @@ def main():
         "Crystal Palace Women": "#1b458f",
     }
 
-    BIG_FOUR = ['Arsenal Women', 'Chelsea Women', 'Manchester City Women', 'Manchester United Women']
+    BIG_FOUR = [
+        "Arsenal Women",
+        "Chelsea Women",
+        "Manchester City Women",
+        "Manchester United Women",
+    ]
 
     rating_fig = make_subplots(
         rows=2,
@@ -204,7 +209,6 @@ def main():
     )
 
     # TODO:
-    # * fix hover text to show the club name better
     # * get rid of horizontal lines where data is missing
     #   can I do that by just filling with NA?
     #   tested and it seems like filling with NA will work
@@ -247,19 +251,64 @@ def main():
 
         glicko_plot_df = pl.from_records(glicko_plot_data)
 
+        # getting some help from Qwen3
+        # put NA values in the big gaps that happen
+        # when a team gets promoted and then relegated
+        # so that plotly won't connect the start and end
+        # of those gaps
+        glicko_plot_df = glicko_plot_df.with_columns(
+            [
+                pl.col("date").shift(1).over("team_id").alias("prev_date"),
+                pl.col("date").over("team_id").alias("current_date"),
+            ]
+        ).with_columns(
+            [
+                # Compute difference in days
+                (pl.col("current_date") - pl.col("prev_date"))
+                .dt.total_days()
+                .alias("days_diff"),
+            ]
+        )
+        # 110 also breaks the gap between each season
+        #gap_threshold_days = 110
+        gap_threshold_days = 300
+        glicko_plot_df = glicko_plot_df.with_columns(
+            [
+                pl.when(
+                    (pl.col("days_diff").is_not_null())
+                    & (pl.col("days_diff") > gap_threshold_days)
+                )
+                .then(True)
+                .otherwise(False)
+                .alias("is_gap")
+            ]
+        )
+        glicko_plot_df = glicko_plot_df.with_columns(
+            [
+                pl.when(pl.col("is_gap"))
+                .then(None)
+                .otherwise(pl.col("rating"))
+                .alias("glicko_rating_fixed")
+            ]
+        )
+
         # sort and then move the big 4 to the end
         # so they get drawn on top of everything else
-        ordered_team_names = glicko_plot_df['team_name'].unique().sort().to_numpy().tolist()
+        ordered_team_names = (
+            glicko_plot_df["team_name"].unique().sort().to_numpy().tolist()
+        )
         for t in BIG_FOUR:
-          try:
-            ordered_team_names.remove(t)
-          except ValueError:
-            continue
-          ordered_team_names.append(t)
+            try:
+                ordered_team_names.remove(t)
+            except ValueError:
+                continue
+            ordered_team_names.append(t)
 
         print(f"\nTier {tier}")
         for team_name in ordered_team_names:
-            player_id = glicko_plot_df.filter(pl.col('team_name') == team_name)['team_id'].unique()[0]
+            player_id = glicko_plot_df.filter(pl.col("team_name") == team_name)[
+                "team_id"
+            ].unique()[0]
             player = players[player_id]
             print(
                 f"Team: {team_name} Player {player_id}: Rating: {player.rating:.2f} RD: {player.rd:.2f}"
@@ -272,15 +321,19 @@ def main():
             rating_fig.add_trace(
                 go.Scatter(
                     x=glicko_plot_df.filter(pl.col("team_id") == player_id)["date"],
-                    y=glicko_plot_df.filter(pl.col("team_id") == player_id)["rating"],
+                    y=glicko_plot_df.filter(pl.col("team_id") == player_id)[
+                        "glicko_rating_fixed"
+                    ],
                     name=f"{team_name}",
-                    legendgroup=team_name if team_name in BIG_FOUR else 'Other',
-                    legendgrouptitle_text=None if team_name in BIG_FOUR else 'Other',
+                    legendgroup=team_name if team_name in BIG_FOUR else "Other",
+                    legendgrouptitle_text=None if team_name in BIG_FOUR else "Other",
                     legendrank=1 if team_name in BIG_FOUR else 1000,
-                    marker_color=team_color_lkp[team_name] if team_name in BIG_FOUR else 'rgba(200, 200,200, 50)',
-                    hovertemplate=f'(%{{y:.0f}}) {team_name} <extra></extra>',
-                    #showlegend=False,
-                    showlegend=team_name not in legend_teams_shown
+                    marker_color=team_color_lkp[team_name]
+                    if team_name in BIG_FOUR
+                    else "rgba(200, 200,200, 50)",
+                    hovertemplate=f"(%{{y:.0f}}) {team_name} <extra></extra>",
+                    # showlegend=False,
+                    showlegend=team_name not in legend_teams_shown,
                 ),
                 row=tier,
                 col=1,
