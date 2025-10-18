@@ -208,11 +208,6 @@ def main():
         ],
     )
 
-    # TODO:
-    # * get rid of horizontal lines where data is missing
-    #   can I do that by just filling with NA?
-    #   tested and it seems like filling with NA will work
-    #   not sure how to actually do that fill yet though
     legend_teams_shown = set()
     for tier in [1, 2]:
         players = {}
@@ -377,29 +372,6 @@ def glicko2_update(p1: Player, p2: Player, p1_outcome: float):
     else:
         p2_outcome = 0.5
     p2.update_player([p1_r_prev], [p1_rd_prev], [p2_outcome])
-
-    # TODO:
-    # Elo?
-    # look into ways of ranking players with few bouts
-    # qwen claims Elo is probably fine
-    # TrueSkill by microsoft
-    # Bayesian Elo
-    # Bradley-Terry Model
-    # Glicko2
-    # Hierarchical Bayesian Models (Stan or PyMC3)
-
-    # qwen reccomends glicko2 if Elo doesn't work
-    # I kind of like Bradley-Terry for no good reason
-    # but there's a python implementation of Glicko2
-    # and bradley-terry is apparently just Elo
-
-    # TODO:
-    # figure out how to get rid of horizontal lines
-    # when a club doesn't play for a season
-    # or between seasons
-    # or when they get relgated and then come back
-    # or just leave that as "future work"
-    # it would have to be a separate trace for each season
 
 
 if __name__ == "__main__":
