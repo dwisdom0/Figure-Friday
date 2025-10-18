@@ -208,6 +208,7 @@ def main():
     #   can I do that by just filling with NA?
     #   tested and it seems like filling with NA will work
     #   not sure how to actually do that fill yet though
+    legend_teams_shown = set()
     for tier in [1, 2]:
         players = {}
         for player_id in appearances.filter(pl.col("tier") == tier)["team_id"].unique():
@@ -245,8 +246,18 @@ def main():
 
         glicko_plot_df = pl.from_records(glicko_plot_data)
 
+        # sort and then move the big 4 to the end
+        # so they get drawn on top of everything else
+        ordered_team_names = glicko_plot_df['team_name'].unique().sort().to_numpy().tolist()
+        for t in BIG_FOUR:
+          try:
+            ordered_team_names.remove(t)
+          except ValueError:
+            continue
+          ordered_team_names.append(t)
+
         print(f"\nTier {tier}")
-        for team_name in glicko_plot_df['team_name'].unique().sort().to_numpy().tolist():
+        for team_name in ordered_team_names:
             player_id = glicko_plot_df.filter(pl.col('team_name') == team_name)['team_id'].unique()[0]
             player = players[player_id]
             print(
@@ -263,15 +274,17 @@ def main():
                     y=glicko_plot_df.filter(pl.col("team_id") == player_id)["rating"],
                     name=f"{team_name}",
                     legendgroup=team_name if team_name in BIG_FOUR else 'Other',
-                    #legendgrouptitle_text=team_name,
+                    legendgrouptitle_text=None if team_name in BIG_FOUR else 'Other',
+                    legendrank=1 if team_name in BIG_FOUR else 1000,
                     marker_color=team_color_lkp[team_name] if team_name in BIG_FOUR else 'rgba(200, 200,200, 50)',
-                    hovertemplate=f'%{{y:.0f}} {team_name} <extra></extra>',
+                    hovertemplate=f'(%{{y:.0f}}) {team_name} <extra></extra>',
                     #showlegend=False,
-                    showlegend=(tier == 1), #(team_name in BIG_FOUR) and (tier == 1) )
+                    showlegend=team_name not in legend_teams_shown
                 ),
                 row=tier,
                 col=1,
             )
+            legend_teams_shown.add(team_name)
 
     # default is margin=dict(l=80, r=80, t=100, b=80)
     rating_fig.update_layout(
@@ -280,7 +293,7 @@ def main():
     for r in [1, 2]:
         rating_fig.update_yaxes(
             range=[1000, 2000],
-            title_text="Glicko2",
+            title_text="Glicko2 Rating",
             row=r,
             col=1,
         )
