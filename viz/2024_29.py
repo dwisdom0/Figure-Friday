@@ -188,6 +188,8 @@ def main():
         "Crystal Palace Women": "#1b458f",
     }
 
+    BIG_FOUR = ['Arsenal Women', 'Chelsea Women', 'Manchester City Women', 'Manchester United Women']
+
     rating_fig = make_subplots(
         rows=2,
         cols=1,
@@ -260,12 +262,12 @@ def main():
                     x=glicko_plot_df.filter(pl.col("team_id") == player_id)["date"],
                     y=glicko_plot_df.filter(pl.col("team_id") == player_id)["rating"],
                     name=f"{team_name}",
-                    legendgroup=team_name,
-                    legendgrouptitle_text=team_name,
-                    marker_color=team_color_lkp[team_name],
+                    legendgroup=team_name if team_name in BIG_FOUR else 'Other',
+                    #legendgrouptitle_text=team_name,
+                    marker_color=team_color_lkp[team_name] if team_name in BIG_FOUR else 'rgba(200, 200,200, 50)',
                     hovertemplate=f'%{{y:.0f}} {team_name} <extra></extra>',
                     #showlegend=False,
-                    showlegend=(tier == 1) or (player_id not in appearances.filter(pl.col("tier") == 1)["team_id"]),
+                    showlegend=(team_name in BIG_FOUR) and (tier == 1)
                 ),
                 row=tier,
                 col=1,
