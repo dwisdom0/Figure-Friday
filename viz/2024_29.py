@@ -246,11 +246,11 @@ def main():
         glicko_plot_df = pl.from_records(glicko_plot_data)
 
         print(f"\nTier {tier}")
-        for team_name in appearances.filter(pl.col('team_id').is_in(players.keys()))['team_name'].unique().sort().to_numpy().tolist():
-            player_id = appearances.filter(pl.col('team_name') == team_name)['team_id'].unique()[0]
+        for team_name in glicko_plot_df['team_name'].unique().sort().to_numpy().tolist():
+            player_id = glicko_plot_df.filter(pl.col('team_name') == team_name)['team_id'].unique()[0]
             player = players[player_id]
             print(
-                f"Player {player_id}: Rating: {player.rating:.2f} RD: {player.rd:.2f}"
+                f"Team: {team_name} Player {player_id}: Rating: {player.rating:.2f} RD: {player.rd:.2f}"
             )
 
             team_name = glicko_plot_df.filter(pl.col("team_id") == player_id)[
@@ -267,7 +267,7 @@ def main():
                     marker_color=team_color_lkp[team_name] if team_name in BIG_FOUR else 'rgba(200, 200,200, 50)',
                     hovertemplate=f'%{{y:.0f}} {team_name} <extra></extra>',
                     #showlegend=False,
-                    showlegend=(team_name in BIG_FOUR) and (tier == 1)
+                    showlegend=(tier == 1), #(team_name in BIG_FOUR) and (tier == 1) )
                 ),
                 row=tier,
                 col=1,
