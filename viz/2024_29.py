@@ -265,7 +265,7 @@ def main():
             ]
         )
         # 110 also breaks the gap between each season
-        #gap_threshold_days = 110
+        # gap_threshold_days = 110
         gap_threshold_days = 300
         glicko_plot_df = glicko_plot_df.with_columns(
             [
@@ -338,6 +338,7 @@ def main():
     # default is margin=dict(l=80, r=80, t=100, b=80)
     rating_fig.update_layout(
         margin=dict(l=80, r=80, t=40, b=40),
+        title_text='Manchester United turned "Big 3" into "Big 4"',
     )
     for r in [1, 2]:
         rating_fig.update_yaxes(
