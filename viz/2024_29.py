@@ -338,7 +338,7 @@ def main():
     # default is margin=dict(l=80, r=80, t=100, b=80)
     rating_fig.update_layout(
         margin=dict(l=80, r=80, t=40, b=40),
-        title_text="Manchester United closed the gap after a late start",
+        title_text="Manchester United started late but bridged the gap",
     )
     for r in [1, 2]:
         rating_fig.update_yaxes(
