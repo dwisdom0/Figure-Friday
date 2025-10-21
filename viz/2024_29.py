@@ -338,17 +338,18 @@ def main():
     # default is margin=dict(l=80, r=80, t=100, b=80)
     rating_fig.update_layout(
         margin=dict(l=80, r=80, t=40, b=40),
-        title_text='Manchester United turned "Big 3" into "Big 4"',
+        title_text="Manchester United closed the gap after a late start",
     )
     for r in [1, 2]:
         rating_fig.update_yaxes(
             range=[1000, 2000],
-            title_text="Glicko2 Rating",
+            title_text="Glicko-2 Rating",
             row=r,
             col=1,
         )
     rating_fig.show()
-    breakpoint()
+
+    # fig.write_html("figure_friday_2024_29.html", include_plotlyjs="cdn")
 
 
 def glicko2_update(p1: Player, p2: Player, p1_outcome: float):
