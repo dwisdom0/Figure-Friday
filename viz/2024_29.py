@@ -203,8 +203,8 @@ def main():
         shared_yaxes=True,
         shared_xaxes=True,
         subplot_titles=[
-            "Women's Super League (Tier 1)",
-            "Women's Super League 2 (Tier 2)",
+            "Women's Super League",
+            "Women's Super League 2",
         ],
     )
 
